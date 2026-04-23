@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XD RoadMap - 라이선스 관리</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ─── 로그인 오버레이 ─── -->
+<div id="loginOverlay" class="overlay active">
+    <div class="login-box">
+        <div class="login-logo">
+            <i class="ph-fill ph-shield-check"></i>
+        </div>
+        <p>XD RoadMap 라이선스 관리 시스템</p>
+        <div class="pw-wrap">
+            <input type="password" id="loginKey" placeholder="접속 키 (ID/Key) 입력">
+            <button type="button" id="togglePw" class="pw-toggle" title="비밀번호 표시/숨기기">
+                <i class="ph ph-eye" id="togglePwIcon"></i>
+            </button>
+        </div>
+        <div id="loginError" class="error-msg"></div>
+        <button id="loginBtn" class="btn-primary full-width">로그인</button>
+    </div>
+</div>
+
+<!-- ─── 토스트 알림 ─── -->
+<div id="toastMsg" class="toast"></div>
+
+<!-- ─── 앱 본문 ─── -->
+<div class="app-container" id="appContent" style="display:none;">
+
+    <!-- 좌측 사이드바 -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="ph-fill ph-shield-check" style="color:#0EA5E9;font-size:22px;"></i>
+            <span class="logo-text">LicenseCare</span>
+        </div>
+
+        <div class="user-profile">
+            <div class="avatar"><i class="ph ph-user"></i></div>
+            <div class="user-info">
+                <span class="user-name" id="userNameDisplay">-</span>
+                <span class="user-role" id="userRoleDisplay">-</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-page="dashboard">
+                <i class="ph ph-squares-four"></i> 대시보드
+            </a>
+            <a href="#" class="nav-item" data-page="requests" id="navRequests">
+                <i class="ph ph-list-checks"></i> 요청 현황
+                <span class="badge badge-red nav-badge" id="navPendingBadge" style="display:none;">0</span>
+            </a>
+            <a href="#" class="nav-item" data-page="pool">
+                <i class="ph ph-database"></i> 자산 풀 현황
+            </a>
+            <a href="#" class="nav-item" data-page="logs">
+                <i class="ph ph-clock-counter-clockwise"></i> 이력 로그
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <button class="nav-item btn-nav" id="refreshBtn">
+                <i class="ph ph-arrows-clockwise"></i> 새로고침
+            </button>
+            <button class="nav-item btn-nav" id="logoutBtn">
+                <i class="ph ph-sign-out"></i> 로그아웃
+            </button>
+        </div>
+    </aside>
+
+    <!-- 메인 영역 -->
+    <main class="main-content">
+        <!-- 상단 헤더 -->
+        <header class="top-header">
+            <div class="breadcrumb" id="breadcrumb">대시보드</div>
+            <div class="header-actions">
+                <div class="role-badge" id="roleBadgeHeader"></div>
+            </div>
+        </header>
+
+        <!-- ─── 대시보드 뷰 ─── -->
+        <div id="view-dashboard" class="view-section active">
+            <!-- INAVI용: 요청 폼 + 현황 나란히 -->
+            <div id="inaviLayout" style="display:none;">
+                <div class="two-col-layout">
+                    <!-- 좌: 활성화 요청 폼 -->
+                    <div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3><i class="ph ph-plus-circle" style="color:#0EA5E9;"></i> 라이선스 활성화 요청</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label>라이선스 번호</label>
+                                    <select id="selectLicenseId"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>요청 개월 수 <span class="label-hint">(최소 2개월)</span></label>
+                                    <select id="selectMonths"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>요청 메시지 / 메모 (선택)</label>
+                                    <textarea id="requestMemo" rows="3" placeholder="여기에 남길 메모를 입력하세요."></textarea>
+                                </div>
+                                <div id="requestAssetWarning" class="info-box" style="display:none;"></div>
+                                <button class="btn-primary full-width" id="btnSubmitRequest">요청하기</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 우: 라이선스 현황 -->
+                    <div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3><i class="ph ph-key" style="color:#0EA5E9;"></i> 라이선스 현황</h3>
+                            </div>
+                            <div class="card-body" id="licenseListInavi"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EGIS용: 라이선스 현황 전체 너비 -->
+            <div id="egisLayout" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="ph ph-key" style="color:#0EA5E9;"></i> 현재 활성화된 라이선스 상태</h3>
+                        <span class="stat-label" id="egisLicSummary"></span>
+                    </div>
+                    <div class="card-body" id="licenseListEgis"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── 요청 현황 뷰 ─── -->
+        <div id="view-requests" class="view-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="ph ph-list-checks" style="color:#0EA5E9;"></i> 요청 현황</h3>
+                    <span class="badge badge-red" id="requestsCountBadge" style="display:none;">0건 대기중</span>
+                </div>
+                <div class="card-body" id="requestsList"></div>
+            </div>
+        </div>
+
+        <!-- ─── 자산 풀 현황 뷰 ─── -->
+        <div id="view-pool" class="view-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="ph ph-database" style="color:#0EA5E9;"></i> 34개월 통합 자산 풀 현황</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-row">
+                        <div class="metric-card">
+                            <p class="metric-label">전체 풀</p>
+                            <h2 class="metric-value" id="metricTotal">-</h2>
+                            <p class="metric-unit">개월</p>
+                        </div>
+                        <div class="metric-card">
+                            <p class="metric-label">잔여</p>
+                            <h2 class="metric-value green" id="metricRemain">-</h2>
+                            <p class="metric-unit">개월</p>
+                        </div>
+                        <div class="metric-card">
+                            <p class="metric-label">사용됨</p>
+                            <h2 class="metric-value red" id="metricUsed">-</h2>
+                            <p class="metric-unit">개월</p>
+                        </div>
+                    </div>
+                    <div class="pool-bar-container">
+                        <div class="pool-bar-bg">
+                            <div class="pool-bar-fill" id="poolBarFill"></div>
+                        </div>
+                        <div class="pool-bar-labels">
+                            <span>0</span>
+                            <span id="poolBarUsedLabel">0개월 사용</span>
+                            <span id="poolBarTotalLabel">전체 -개월</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── 이력 로그 뷰 ─── -->
+        <div id="view-logs" class="view-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="ph ph-clock-counter-clockwise" style="color:#0EA5E9;"></i> 전체 처리 이력</h3>
+                </div>
+                <div class="card-body" id="logsList">
+                    <p class="empty-state">기록된 이력이 없습니다.</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ─── 승인 모달 (EGIS 전용) ─── -->
+<div id="approvalModal" class="overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>라이선스 요청 검토 및 처리</h3>
+            <button class="icon-btn" id="closeModalBtn"><i class="ph ph-x"></i></button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer">
+            <button class="btn-danger" id="rejectBtn">❌ 반려</button>
+            <button class="btn-success" id="approveBtn">✅ 승인</button>
+        </div>
+    </div>
+</div>
+
+<!-- ─── 연장 요청 모달 (INAVI 전용) ─── -->
+<div id="extendModal" class="overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>라이선스 연장 요청</h3>
+            <button class="icon-btn" id="closeExtendModalBtn"><i class="ph ph-x"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>연장 대상 라이선스</label>
+                <p id="extendLicId" class="modal-data-text">-</p>
+            </div>
+            <div class="form-group">
+                <label>연장 개월 수 <span class="label-hint">(1~12개월)</span></label>
+                <select id="selectExtendMonths"></select>
+            </div>
+            <div class="form-group">
+                <label>연장 사유 / 메모 (선택)</label>
+                <textarea id="extendMemo" rows="3" placeholder="연장 사유를 입력하세요."></textarea>
+            </div>
+            <div id="extendAssetWarning" class="info-box" style="display:none;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-outline" id="cancelExtendBtn">취소</button>
+            <button class="btn-primary" id="submitExtendBtn">연장 요청하기</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
