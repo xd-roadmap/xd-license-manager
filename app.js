@@ -90,7 +90,7 @@ window.addEventListener('load', function () {
     async function loadAll() {
         try {
             var r1 = await db.from('asset_pool').select('*').limit(1);
-            pool = r1.data && r1.data[0] ? r1.data[0] : { total_months: 34, remaining_months: 34 };
+            pool = r1.data && r1.data[0] ? r1.data[0] : { total_months: 36, remaining_months: 36 };
 
             var r2 = await db.from('licenses').select('*').order('id');
             licenses = r2.data || [];
