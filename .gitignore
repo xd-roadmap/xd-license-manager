@@ -1,0 +1,8 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+frontend/
+test_race.py
+reset_db.sql
