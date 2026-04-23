@@ -80,7 +80,7 @@ def create_request(email: str, license_id: int, months: int) -> dict:
     # 로그 기록
     log_data = {
         "event_type": "REQUEST",
-        "description": f"{email} requested license {license_id} for {months} months."
+        "description": f"{email} 사용자가 License {license_id}번 라이선스 활성화를 요청했습니다. ({months}개월)"
     }
     supabase.table("logs").insert(log_data).execute()
 
@@ -136,7 +136,7 @@ def approve_request(token: str) -> bool:
     # 4. 로그 기록
     log_data = {
         "event_type": "APPROVAL",
-        "description": f"Request {request_data['id']} approved. License {license_id} active until {expiry_date.strftime('%Y-%m-%d')}."
+        "description": f"요청(ID: {request_data['id']})이 승인되었습니다. License {license_id}번이 {expiry_date.strftime('%Y-%m-%d')}까지 활성화되었습니다."
     }
     supabase.table("logs").insert(log_data).execute()
 
@@ -163,7 +163,7 @@ def cancel_request(request_id: str) -> bool:
     # 4. 로그 기록
     supabase.table("logs").insert({
         "event_type": "REJECT",
-        "description": f"Request {request_id} cancelled by INAVI user."
+        "description": f"아이나비 사용자에 의해 요청(ID: {request_id})이 취소되었습니다."
     }).execute()
     
     return True

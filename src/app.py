@@ -129,18 +129,21 @@ st.markdown("""
 
 def translate_log_desc(event_type, desc):
     if not desc: return "-"
+    if any(kor in desc for kor in ["요청했습니다", "승인되었습니다", "취소되었습니다", "반려했습니다", "반려되었습니다"]):
+        return desc
     import re
-    m1 = re.search(r"License (\d+) 활성화 요청 \((\d+)개월\)", desc)
-    if m1: return f"License {m1.group(1)}번 라이선스 활성화 요청이 접수되었습니다. (요청 기간: {m1.group(2)}개월)"
-    m2 = re.search(r"License (\d+) 연장 요청 \((\d+)개월\)", desc)
-    if m2: return f"License {m2.group(1)}번 라이선스 연장 요청이 접수되었습니다. (요청 기간: {m2.group(2)}개월)"
-    m3 = re.search(r"License (\d+) 승인 \((\d+)개월, 만료: ([\d\-]+)\)", desc)
-    if m3: return f"License {m3.group(1)}번 라이선스가 승인되어 활성화되었습니다. (기간: {m3.group(2)}개월, 만료일: {m3.group(3)})"
-    if "rejected by EGIS" in desc: return "관리자(EGIS)가 요청을 반려했습니다."
-    if "approved by EGIS" in desc: return "관리자(EGIS)가 요청을 승인했습니다."
-    if event_type == "REQUEST": return f"라이선스 요청: {desc}"
-    if event_type == "APPROVAL": return f"승인 완료: {desc}"
-    if event_type == "REJECT": return f"반려 처리: {desc}"
+    m1 = re.search(r"([\w@.]+) requested license (\d+) for (\d+) months", desc)
+    if m1: return f"{m1.group(1)} 사용자가 License {m1.group(2)}번 활성화를 요청했습니다. ({m1.group(3)}개월)"
+    m2 = re.search(r"Request (\d+) approved\. License (\d+) active until ([\d\-]+)", desc)
+    if m2: return f"요청(ID: {m2.group(1)})이 승인되었습니다. License {m2.group(2)}번이 {m2.group(3)}까지 활성화되었습니다."
+    if "cancelled by INAVI user" in desc:
+        m3 = re.search(r"Request (\d+)", desc)
+        id_str = f"(ID: {m3.group(1)})" if m3 else ""
+        return f"아이나비 사용자에 의해 요청{id_str}이 취소되었습니다."
+    if "rejected by EGIS" in desc:
+        m4 = re.search(r"Request (\d+)", desc)
+        id_str = f"(ID: {m4.group(1)})" if m4 else ""
+        return f"관리자(EGIS)가 요청{id_str}을 반려했습니다."
     return desc
 
 def log_type_kor(t):
@@ -173,9 +176,6 @@ def render_login():
     with col2:
         st.markdown("""
         <div class="login-box">
-            <div style="margin-bottom: 16px; color: #0EA5E9; font-size: 40px;">
-                <i class="ph-fill ph-shield-check"></i>
-            </div>
             <p>XD RoadMap 라이선스 관리 시스템</p>
         </div>
         """, unsafe_allow_html=True)
