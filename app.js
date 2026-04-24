@@ -209,7 +209,8 @@ window.addEventListener('load', function () {
         var c = document.getElementById('requestsList');
         c.innerHTML = '';
         if (requests.length === 0) {
-            c.innerHTML = '<p class="empty-state">아직 접수된 요청이 없습니다.</p>';
+            var msg = role === 'INAVI' ? '아직 신청된 요청이 없습니다.' : '아직 접수된 요청이 없습니다.';
+            c.innerHTML = '<p class="empty-state">' + msg + '</p>';
             return;
         }
         requests.forEach(function (req) {
