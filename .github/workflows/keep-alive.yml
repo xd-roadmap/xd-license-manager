@@ -1,0 +1,24 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    - cron: '0 0 */5 * *'  # 5일마다 자정 실행
+  workflow_dispatch:        # 수동 실행 버튼도 활성화
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            'https://utpzjisibwkdvoxjkwxx.supabase.co/rest/v1/licenses?select=id&limit=1' \
+            -H 'apikey: ${{ secrets.SUPABASE_ANON_KEY }}' \
+            -H 'Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}')
+          echo "Response code: $response"
+          if [ $response -eq 200 ]; then
+            echo "✅ Supabase is alive"
+          else
+            echo "❌ Something went wrong: $response"
+            exit 1
+          fi
